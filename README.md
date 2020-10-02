@@ -198,6 +198,19 @@ end
 debug("goes to script_log.txt via out()")
 ```
 
+## Output files
+
+Similarly, if you just want to change the file to which logs are written instead of the default `debug.txt`, this can be configured per-namespace by setting the `file` property.
+
+```lua
+local debug = require("tw-debug")("test")
+debug.file = "mod_logs.txt"
+
+-- now goes to mod_logs.txt
+debug("goes to mod_logs.txt")
+```
+
+
 ## Checking whether a debug target is enabled
 
 After you've created a debug instance, you can determine whether or not it is
