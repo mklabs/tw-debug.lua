@@ -29,6 +29,8 @@ local LIP = require("vendors/LIP")
 
 local DEBUG_INI_FILEPATH = "debug.ini"
 
+local firstWrite = true
+
 local debug = {}
 debug.file = "debug.txt"
 debug.hasIniFile = false
@@ -93,12 +95,18 @@ function debug.fileExists(name)
     return false 
 end
 
-function debug.logToFile(filepath, text)
+function debug.logToFile(filepath, options, text)
     if not debug.hasIniFile then
         return
     end
+
+    local mode = "a"
+    if firstWrite then
+        mode = options.DEBUG_MODE == "a" and "a" or "w"
+        firstWrite = false
+    end    
     
-    local file = io.open(filepath, "a")
+    local file = io.open(filepath, mode)
     file:write(text .. "\n")
     file:flush()
     file:close()
@@ -139,7 +147,7 @@ function debug.log(env, ...)
     str = str .. " +" .. env.diff
 
     local filepath = env.file or debug.file
-    debug.logToFile(filepath, str)
+    debug.logToFile(filepath, env.options, str)
 
     return str
 end
@@ -163,6 +171,9 @@ function debug.setup()
     -- The currently active debug mode names, and names to skip
     createDebug.names = {}
     createDebug.skips = {}
+
+    -- Options loaded from ini file
+    createDebug.options = {}
 
     debug.hasIniFile = debug.fileExists(DEBUG_INI_FILEPATH)
 
@@ -207,7 +218,7 @@ function debug.setup()
         end
         
         local options = LIP.load(DEBUG_INI_FILEPATH)
-        return options.DEBUG
+        return options
     end
 
     -- Returns true if the given mode name is enabled, false otherwise.
@@ -262,6 +273,7 @@ function debug.setup()
                 prev = prev,
                 curr = curr,
                 namespace = namespace,
+                options = createDebug.options,
                 file = file
             }
 
@@ -277,7 +289,8 @@ function debug.setup()
         return logger
     end
 
-    createDebug.enable(createDebug.load())
+    createDebug.options = createDebug.load()
+    createDebug.enable(createDebug.options.DEBUG)
 
 	setmetatable(createDebug, {
         __call = function(t, namespace)
